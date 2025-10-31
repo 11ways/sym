@@ -278,11 +278,11 @@ Report bugs at: <https://github.com/11ways/sym/issues>
 
 # AUTHOR
 
-Written by Roel van Gils.
+Written by Roel Van Gils.
 
 # COPYRIGHT
 
-Copyright © 2025 Roel van Gils. License: MIT
+Copyright © 2025 Roel Van Gils. License: MIT
 
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.

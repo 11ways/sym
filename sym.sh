@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # sym - Symbolic Link Manager
-# Version: 1.0.0
-# Author: Roel van Gils
+# Version: 1.0.1
+# Author: Roel Van Gils
 # License: MIT
 # Description: A simple, user-friendly tool for managing symbolic links in ~/.local/bin
 
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # === METADATA ===
-readonly VERSION="1.0.0"
+readonly VERSION="1.0.1"
 readonly SCRIPT_NAME="sym"
 
 # === CONFIGURATION ===

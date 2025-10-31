@@ -817,6 +817,6 @@ Copyright (c) 2025 Roel van Gils
 
 ---
 
-**Made with ❤️ by [Roel van Gils](https://github.com/roelvangils)**
+**Made with ❤️ by [Roel Van Gils](https://github.com/roelvangils)**
 
 If you find this tool useful, consider giving it a ⭐ on GitHub!
