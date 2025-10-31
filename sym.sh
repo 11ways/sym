@@ -290,14 +290,7 @@ show_help() {
     echo "    SYM_DIR         Directory for symbolic links (default: ~/.local/bin)"
     echo "    NO_COLOR        Disable colored output"
     echo ""
-    echo -e "${C_BOLD}EXIT CODES:${C_RESET}"
-    echo "    0    Success"
-    echo "    1    General error"
-    echo "    2    Not found"
-    echo "    3    Permission denied"
-    echo "    4    Invalid argument"
-    echo ""
-    echo "For more information, visit: https://github.com/roelvangils/sym"
+    echo "For more information, visit: https://github.com/11ways/sym"
 }
 
 # Lists all symbolic links with formatting

@@ -131,4 +131,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[1.0.0]: https://github.com/roelvangils/sym/releases/tag/v1.0.0
+[1.0.0]: https://github.com/11ways/sym/releases/tag/v1.0.0
