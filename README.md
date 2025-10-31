@@ -39,21 +39,26 @@ A simple, user-friendly command-line tool for managing symbolic links in `~/.loc
 
 ## Installation
 
-### Quick Install
+### Homebrew (Recommended for macOS)
+
+The easiest way to install sym on macOS is using Homebrew:
 
 ```bash
-# Clone the repository
-git clone https://github.com/11ways/sym.git
-cd sym
-
-# Make the script executable
-chmod +x sym.sh
-
-# Create a symlink (using sym itself!)
-./sym.sh sym $(pwd)/sym.sh
+brew install 11ways/sym/sym
 ```
 
-### Install with Makefile (Recommended)
+This automatically installs:
+- The `sym` command in your PATH
+- The man page (accessible via `man sym`)
+- All dependencies
+
+**Verify installation:**
+```bash
+sym --version
+man sym
+```
+
+### Install with Makefile
 
 The Makefile automates installation of both the script and man page:
 
@@ -97,6 +102,18 @@ man sym
 ```bash
 sym --version
 # Output: sym version 1.0.0
+```
+
+### Uninstalling
+
+**Homebrew:**
+```bash
+brew uninstall sym
+```
+
+**Makefile:**
+```bash
+make uninstall-local  # or make uninstall for system-wide
 ```
 
 ## Quick Start
