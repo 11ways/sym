@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sym - Symbolic Link Manager</title>
+    <meta name="description" content="A user-friendly symbolic link manager for managing links in ~/.local/bin">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --accent: #10b981;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+            --code-bg: #0f172a;
+            --terminal-green: #10b981;
+            --terminal-blue: #3b82f6;
+            --terminal-yellow: #fbbf24;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background: var(--light);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            opacity: 0.95;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Installation Section */
+        .install-section {
+            padding: 60px 0;
+            background: white;
+        }
+
+        .install-section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            color: var(--dark);
+        }
+
+        .install-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 12px 24px;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            color: var(--terminal-green);
+            padding: 30px;
+            border-radius: 12px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.95rem;
+            overflow-x: auto;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .code-block .comment {
+            color: #64748b;
+        }
+
+        .code-block .prompt {
+            color: var(--terminal-blue);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: var(--light);
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        /* Examples Section */
+        .examples {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .examples h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 60px;
+        }
+
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+        }
+
+        .example {
+            background: var(--code-bg);
+            padding: 20px;
+            border-radius: 12px;
+            color: var(--terminal-green);
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        .example h4 {
+            color: var(--terminal-yellow);
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+
+        .example pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* CTA Section */
+        .cta {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 1.1rem;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: var(--primary);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2.5rem;
+            }
+
+            header p {
+                font-size: 1.2rem;
+            }
+
+            .features-grid, .example-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="version-badge">v1.0.1</div>
+            <h1>sym</h1>
+            <p>A user-friendly symbolic link manager for ~/.local/bin</p>
+        </div>
+    </header>
+
+    <section class="install-section">
+        <div class="container">
+            <h2>Installation</h2>
+
+            <div class="install-tabs">
+                <button class="tab-button active" onclick="showTab('macos')">macOS</button>
+                <button class="tab-button" onclick="showTab('linux')">Linux</button>
+                <button class="tab-button" onclick="showTab('manual')">Manual</button>
+            </div>
+
+            <div id="macos-tab" class="tab-content active">
+                <div class="code-block">
+<span class="comment"># Install using Homebrew (recommended)</span>
+<span class="prompt">$</span> brew install 11ways/sym/sym
+
+<span class="comment"># Verify installation</span>
+<span class="prompt">$</span> sym --version
+<span style="color: white;">sym version 1.0.1</span>
+
+<span class="comment"># View documentation</span>
+<span class="prompt">$</span> man sym
+                </div>
+            </div>
+
+            <div id="linux-tab" class="tab-content">
+                <div class="code-block">
+<span class="comment"># One-line installation</span>
+<span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/11ways/sym/main/install.sh | bash
+
+<span class="comment"># Or safer (inspect first)</span>
+<span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/11ways/sym/main/install.sh -o install.sh
+<span class="prompt">$</span> less install.sh
+<span class="prompt">$</span> bash install.sh
+
+<span class="comment"># Or use Homebrew on Linux</span>
+<span class="prompt">$</span> brew install 11ways/sym/sym
+                </div>
+            </div>
+
+            <div id="manual-tab" class="tab-content">
+                <div class="code-block">
+<span class="comment"># Clone and install with Makefile</span>
+<span class="prompt">$</span> git clone https://github.com/11ways/sym.git
+<span class="prompt">$</span> cd sym
+<span class="prompt">$</span> make install-local
+
+<span class="comment"># Or quick setup</span>
+<span class="prompt">$</span> chmod +x sym.sh
+<span class="prompt">$</span> ./sym.sh sym $(pwd)/sym.sh
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Easy Link Management</h3>
+                    <p>Create, list, inspect, and remove symbolic links with simple commands. Intuitive interface that just works.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3>Safety First</h3>
+                    <p>Input validation, confirmation prompts, and dry-run mode ensure you never make mistakes with your links.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Verify & Fix</h3>
+                    <p>Automatically detect broken links and fix them with a single command. Keep your environment clean.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3>Beautiful Output</h3>
+                    <p>Color-coded interface with status indicators. Clear, aligned formatting makes everything easy to read.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Multiple Formats</h3>
+                    <p>Export to text, JSON, or CSV. Perfect for automation, scripting, and integration with other tools.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Full Documentation</h3>
+                    <p>Comprehensive man page, detailed README, examples, and contributing guidelines. Everything you need.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Cross-Platform</h3>
+                    <p>Works seamlessly on both macOS and Linux. Handles platform differences automatically.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Fast & Lightweight</h3>
+                    <p>Pure bash with no external dependencies. Instant startup, minimal footprint.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="examples">
+        <div class="container">
+            <h2>Quick Examples</h2>
+            <div class="example-grid">
+                <div class="example">
+                    <h4>Create a Symlink</h4>
+                    <pre><span class="prompt">$</span> sym sublime /Applications/Sublime\ Text.app/Contents/.../subl
+<span style="color: #10b981;">✓</span> Successfully created symbolic link:
+  → From: /Applications/Sublime Text.app/.../subl
+  → To:   ~/.local/bin/sublime</pre>
+                </div>
+
+                <div class="example">
+                    <h4>List All Links</h4>
+                    <pre><span class="prompt">$</span> sym ls
+
+Existing symbolic links in '~/.local/bin':
+
+           sublime → /Applications/Sublime Text.app/.../subl
+              code → /Applications/Visual Studio Code.app/.../code
+            docker → /usr/local/bin/docker</pre>
+                </div>
+
+                <div class="example">
+                    <h4>Show Link Info</h4>
+                    <pre><span class="prompt">$</span> sym info sublime
+
+  → From:    ~/.local/bin/sublime
+  → To:      /Applications/Sublime Text.app/.../subl
+  → Created: 2025-10-31 14:23:45
+  → Size:    2.4MB
+  → Type:    File</pre>
+                </div>
+
+                <div class="example">
+                    <h4>Verify Links</h4>
+                    <pre><span class="prompt">$</span> sym verify
+
+Verifying symbolic links...
+
+  <span style="color: #10b981;">✓</span> sublime → /Applications/Sublime Text.app/.../subl
+  <span style="color: #10b981;">✓</span> code → /Applications/Visual Studio Code.app/.../code
+  <span style="color: #ef4444;">✗</span> oldtool → ~/bin/removed-tool <span style="color: #ef4444;">(broken)</span>
+
+<span style="color: #10b981;">✓</span> All 3 symbolic links verified!</pre>
+                </div>
+
+                <div class="example">
+                    <h4>Export to JSON</h4>
+                    <pre><span class="prompt">$</span> sym ls --format=json
+[
+  {
+    "name": "sublime",
+    "target": "/Applications/Sublime Text.app/.../subl",
+    "status": "ok",
+    "size": "2.4MB",
+    "created": "2025-10-31 14:23:45"
+  }
+]</pre>
+                </div>
+
+                <div class="example">
+                    <h4>Fix Broken Links</h4>
+                    <pre><span class="prompt">$</span> sym fix
+
+The following broken links will be removed:
+
+  <span style="color: #ef4444;">✗</span> oldtool → ~/bin/removed-tool
+
+Remove 1 broken link(s)? (y/N): y
+<span style="color: #10b981;">✓</span> Removed 1 broken link(s)!</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Get Started Today</h2>
+            <div class="cta-buttons">
+                <a href="https://github.com/11ways/sym" class="btn btn-primary">View on GitHub</a>
+                <a href="https://github.com/11ways/sym#installation" class="btn btn-secondary">Installation Guide</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>Made with ❤️ by <a href="https://github.com/roelvangils">Roel van Gils</a></p>
+            <p>Licensed under <a href="https://github.com/11ways/sym/blob/main/LICENSE">MIT License</a></p>
+            <p><a href="https://github.com/11ways/sym/issues">Report Issues</a> • <a href="https://github.com/11ways/sym/blob/main/CONTRIBUTING.md">Contribute</a></p>
+        </div>
+    </footer>
+
+    <script>
+        function showTab(tab) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tab + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

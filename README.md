@@ -2,7 +2,7 @@
 
 A simple, user-friendly command-line tool for managing symbolic links in `~/.local/bin`.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
 
@@ -127,7 +127,7 @@ man sym
 
 ```bash
 sym --version
-# Output: sym version 1.0.0
+# Output: sym version 1.0.1
 ```
 
 ### Uninstalling
@@ -775,7 +775,7 @@ Contributions are welcome! Here's how you can help:
 
 ```bash
 # Clone the repo
-git clone https://github.com/roelvangils/sym.git
+git clone https://github.com/11ways/sym.git
 cd sym
 
 # Make changes
@@ -811,8 +811,8 @@ Copyright (c) 2025 Roel van Gils
 
 ## Support
 
-- **Issues**: https://github.com/roelvangils/sym/issues
-- **Discussions**: https://github.com/roelvangils/sym/discussions
+- **Issues**: https://github.com/11ways/sym/issues
+- **Discussions**: https://github.com/11ways/sym/discussions
 - **Email**: your-email@example.com
 
 ---
