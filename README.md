@@ -58,6 +58,32 @@ sym --version
 man sym
 ```
 
+### One-Line Install (Linux & macOS)
+
+For a quick installation on any Unix-like system:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/11ways/sym/main/install.sh | bash
+```
+
+**Or safer (inspect the script first):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/11ways/sym/main/install.sh -o install.sh
+less install.sh  # Review the script
+bash install.sh
+```
+
+This installs to `~/.local/bin` and builds the man page if `pandoc` is available.
+
+**For Linux users:**
+
+Homebrew also works on Linux! Install Homebrew first, then:
+
+```bash
+brew install 11ways/sym/sym
+```
+
 ### Install with Makefile
 
 The Makefile automates installation of both the script and man page:
