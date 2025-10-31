@@ -30,6 +30,5 @@ tests/tmp/
 *.tar.gz
 *.zip
 
-# Build artifacts
+# Build artifacts (keep sym.1.gz for distribution)
 sym.1
-sym.1.gz

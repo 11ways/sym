@@ -26,7 +26,7 @@ OUTPUT_FORMAT="text"  # text, json, csv
 # Check if colors should be enabled
 setup_colors() {
     # Disable colors if NO_COLOR is set, output is not a terminal, or TERM is dumb
-    if [[ -v NO_COLOR ]] || [[ ! -t 1 ]] || [[ "${TERM:-}" == "dumb" ]]; then
+    if [[ -n "${NO_COLOR+x}" ]] || [[ ! -t 1 ]] || [[ "${TERM:-}" == "dumb" ]]; then
         C_RED=""
         C_GREEN=""
         C_YELLOW=""
