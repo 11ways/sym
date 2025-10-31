@@ -43,7 +43,7 @@ A simple, user-friendly command-line tool for managing symbolic links in `~/.loc
 
 ```bash
 # Clone the repository
-git clone https://github.com/roelvangils/sym.git
+git clone https://github.com/11ways/sym.git
 cd sym
 
 # Make the script executable
@@ -52,6 +52,39 @@ chmod +x sym.sh
 # Create a symlink (using sym itself!)
 ./sym.sh sym $(pwd)/sym.sh
 ```
+
+### Install with Makefile (Recommended)
+
+The Makefile automates installation of both the script and man page:
+
+```bash
+# Clone the repository
+git clone https://github.com/11ways/sym.git
+cd sym
+
+# Install to user directory (no sudo required)
+make install-local
+
+# Or install system-wide (requires sudo)
+sudo make install
+```
+
+**What gets installed:**
+- Script: `~/.local/bin/sym` (or `/usr/local/bin/sym` for system-wide)
+- Man page: `~/.local/share/man/man1/sym.1.gz` (or `/usr/local/share/man/man1/sym.1.gz`)
+
+**View the man page:**
+```bash
+# Add to your shell config (~/.bashrc or ~/.zshrc)
+export MANPATH="$MANPATH:$HOME/.local/share/man"
+
+# Then view the manual
+man sym
+```
+
+**Requirements:**
+- `pandoc` - for building the man page ([install instructions](https://pandoc.org/installing.html))
+- `gzip` - usually pre-installed
 
 ### Manual Install
 
