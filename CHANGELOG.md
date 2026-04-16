@@ -5,6 +5,41 @@ All notable changes to sym will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-04-16
+
+### Fixed
+- Relative symlink targets are now resolved against the symlink's directory
+  instead of the caller's CWD. Previously, `sym ls`, `sym verify`, `sym fix`,
+  `sym info`, and `sym <existing-link> <new>` could falsely report valid
+  relative symlinks as broken.
+- `sym verify` and `sym fix` no longer risk aborting under `set -e` when a
+  counter is incremented from 0 (`((x++))` returns exit status 1 in that
+  case). Counters now use `x=$((x+1))`.
+- `sym ls --format=json` and `--format=csv` now properly escape special
+  characters. Filenames containing quotes, commas, backslashes, newlines, or
+  carriage returns no longer produce invalid output.
+- The PATH-not-in-PATH warning no longer fires after read-only commands
+  (`ls`, `info`, `verify`, `fix`, `rm`). It now only appears after a create
+  operation, as intended.
+
+### Changed
+- Updated GitHub repository references from `roelvangils/sym` to `11ways/sym`
+  in help output and documentation.
+- Removed `EXIT CODES` section from `--help` output (still documented in the
+  man page).
+- Corrected author name capitalization to "Roel Van Gils" across all files.
+
+## [1.0.1] - 2025-10-31
+
+### Fixed
+- macOS bash 3.2 compatibility: replaced `[[ -v NO_COLOR ]]` with
+  `[[ -n "${NO_COLOR+x}" ]]`. The `-v` operator requires bash 4.2+, which
+  macOS does not ship by default.
+
+### Changed
+- Ship a pre-built `sym.1.gz` man page in the repository so `brew install`
+  and the install script no longer require `pandoc` at install time.
+
 ## [1.0.0] - 2025-10-31
 
 ### Added
@@ -131,4 +166,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.0.2]: https://github.com/11ways/sym/releases/tag/v1.0.2
+[1.0.1]: https://github.com/11ways/sym/releases/tag/v1.0.1
 [1.0.0]: https://github.com/11ways/sym/releases/tag/v1.0.0

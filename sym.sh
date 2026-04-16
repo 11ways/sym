@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # sym - Symbolic Link Manager
-# Version: 1.0.1
+# Version: 1.0.2
 # Author: Roel Van Gils
 # License: MIT
 # Description: A simple, user-friendly tool for managing symbolic links in ~/.local/bin
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # === METADATA ===
-readonly VERSION="1.0.1"
+readonly VERSION="1.0.2"
 readonly SCRIPT_NAME="sym"
 
 # === CONFIGURATION ===
@@ -191,6 +191,28 @@ strip_extensions() {
     echo "$name" | sed -E 's/\.(sh|bash|zsh|py|rb|js|pl|command|app|bin|exe)$//'
 }
 
+# Escapes a string for safe inclusion in a JSON string literal.
+json_escape() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+# Escapes a field for safe inclusion in CSV output (RFC 4180).
+csv_escape() {
+    local s="$1"
+    if [[ "$s" == *,* || "$s" == *\"* || "$s" == *$'\n'* || "$s" == *$'\r'* ]]; then
+        s="${s//\"/\"\"}"
+        printf '"%s"' "$s"
+    else
+        printf '%s' "$s"
+    fi
+}
+
 # Checks if destination directory is in PATH
 check_path() {
     if [[ ":$PATH:" != *":$DEST_DIR:"* ]]; then
@@ -356,9 +378,11 @@ list_symlinks() {
         local target=""
         local broken=false
 
-        # Check if target exists
-        if [[ -e "$raw_target" ]]; then
-            target=$(realpath "$raw_target" 2>/dev/null || echo "$raw_target")
+        # Check if target exists. Test the link itself (`-e "$link"`) so that
+        # relative symlink targets are resolved against the symlink's directory
+        # rather than the caller's CWD.
+        if [[ -e "$link" ]]; then
+            target=$(realpath "$link" 2>/dev/null || echo "$raw_target")
             broken=false
         else
             target="$raw_target"
@@ -414,13 +438,19 @@ list_symlinks() {
             local status="ok"
             [[ "${is_broken[i]}" == true ]] && status="broken"
 
+            local j_name j_target j_size j_date
+            j_name=$(json_escape "${link_names[i]}")
+            j_target=$(json_escape "${target_paths[i]/#$HOME/\~}")
+            j_size=$(json_escape "${sizes[i]}")
+            j_date=$(json_escape "${dates[i]}")
+
             cat << EOF
   {
-    "name": "${link_names[i]}",
-    "target": "${target_paths[i]/#$HOME/\~}",
+    "name": "$j_name",
+    "target": "$j_target",
     "status": "$status",
-    "size": "${sizes[i]}",
-    "created": "${dates[i]}"
+    "size": "$j_size",
+    "created": "$j_date"
   }$comma
 EOF
         done
@@ -432,7 +462,12 @@ EOF
             local status="ok"
             [[ "${is_broken[i]}" == true ]] && status="broken"
 
-            echo "${link_names[i]},${target_paths[i]/#$HOME/\~},$status,${sizes[i]},${dates[i]}"
+            printf '%s,%s,%s,%s,%s\n' \
+                "$(csv_escape "${link_names[i]}")" \
+                "$(csv_escape "${target_paths[i]/#$HOME/\~}")" \
+                "$(csv_escape "$status")" \
+                "$(csv_escape "${sizes[i]}")" \
+                "$(csv_escape "${dates[i]}")"
         done
 
     else  # text format
@@ -470,9 +505,10 @@ show_link_info() {
     local target
     target=$(readlink "$dest_link")
 
-    # Try to resolve to real path if it exists
-    if [[ -e "$target" ]]; then
-        target=$(realpath "$target" 2>/dev/null || echo "$target")
+    # Try to resolve to real path if it exists. Test the link itself so
+    # relative targets resolve against the symlink's directory, not CWD.
+    if [[ -e "$dest_link" ]]; then
+        target=$(realpath "$dest_link" 2>/dev/null || echo "$target")
     fi
 
     # Get metadata
@@ -544,9 +580,10 @@ create_link() {
             local current_target
             current_target=$(readlink "$dest_link")
 
-            # Resolve if possible
-            if [[ -e "$current_target" ]]; then
-                current_target=$(realpath "$current_target" 2>/dev/null || echo "$current_target")
+            # Resolve if possible. Test the link itself so relative targets
+            # resolve against the symlink's directory, not CWD.
+            if [[ -e "$dest_link" ]]; then
+                current_target=$(realpath "$dest_link" 2>/dev/null || echo "$current_target")
             fi
 
             # Check if pointing to same place
@@ -645,10 +682,12 @@ verify_links() {
         local target
         target=$(readlink "$link")
 
-        ((total_count++))
+        total_count=$((total_count + 1))
 
-        if [[ ! -e "$target" ]]; then
-            ((broken_count++))
+        # Test the link itself so relative targets resolve against the
+        # symlink's directory, not the caller's CWD.
+        if [[ ! -e "$link" ]]; then
+            broken_count=$((broken_count + 1))
             echo -e "  ${C_RED}✗${C_RESET} $name ${C_GRAY}→${C_RESET} ${target/#$HOME/\~} ${C_RED}(broken)${C_RESET}"
         else
             echo -e "  ${C_GREEN}✓${C_RESET} $name ${C_GRAY}→${C_RESET} ${target/#$HOME/\~}"
@@ -677,12 +716,10 @@ fix_links() {
 
     local broken_links=()
 
-    # Find broken links
+    # Find broken links. Test the link itself so relative targets resolve
+    # against the symlink's directory, not the caller's CWD.
     while IFS= read -r link; do
-        local target
-        target=$(readlink "$link")
-
-        if [[ ! -e "$target" ]]; then
+        if [[ ! -e "$link" ]]; then
             broken_links+=("$link")
         fi
     done <<< "$link_paths"
@@ -717,10 +754,10 @@ fix_links() {
     for link in "${broken_links[@]}"; do
         if [[ "$DRY_RUN_MODE" == true ]]; then
             info "[DRY RUN] Would remove: $(basename "$link")"
-            ((removed_count++))
+            removed_count=$((removed_count + 1))
         else
             if rm "$link" 2>/dev/null; then
-                ((removed_count++))
+                removed_count=$((removed_count + 1))
             else
                 warn "Failed to remove: $(basename "$link")"
             fi
@@ -790,6 +827,10 @@ main() {
     local command="$1"
     shift
 
+    # Track whether this invocation actually created a symlink, so we only
+    # warn about PATH for create operations (not for ls/info/verify/...).
+    local did_create=false
+
     case "$command" in
         ls|list)
             list_symlinks "$@"
@@ -832,9 +873,11 @@ main() {
                 fi
 
                 create_link "$source_path" "$link_name"
+                did_create=true
             elif [[ $# -eq 2 ]]; then
                 # Both name and source provided
                 create_link "$2" "$1"
+                did_create=true
             else
                 error_exit "'sym create' requires 1 or 2 arguments." 4
             fi
@@ -866,18 +909,20 @@ main() {
                     fi
 
                     create_link "$source_path" "$link_name"
+                    did_create=true
                 fi
             elif [[ $# -eq 1 ]]; then
                 # sym <link_name> <source_path>
                 create_link "$1" "$command"
+                did_create=true
             else
                 error_exit "Too many arguments.\nUse --help for usage information." 4
             fi
             ;;
     esac
 
-    # Check if DEST_DIR is in PATH (only for create operations)
-    if [[ "$command" == "create" || "$command" == "add" ]] || [[ $# -ge 1 ]]; then
+    # Only warn about PATH when we actually created a symlink.
+    if [[ "$did_create" == true ]]; then
         check_path
     fi
 }
