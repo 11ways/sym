@@ -2,8 +2,8 @@
 title: SYM
 section: 1
 header: User Manual
-footer: sym 1.0.0
-date: October 2025
+footer: sym 1.1.0
+date: April 2026
 ---
 
 # NAME
@@ -38,12 +38,15 @@ The tool is designed to help developers and system administrators easily manage 
 
 # COMMANDS
 
-## ls [--broken] [--format=*FORMAT*]
+## ls [--broken] [--name=*GLOB*] [--format=*FORMAT*]
 
 Lists all symbolic links in the configured directory.
 
 **--broken**
 :   Show only broken links (links pointing to non-existent targets).
+
+**--name**=*GLOB*
+:   Filter by a shell glob against the link name (e.g. **--name='my\*'**).
 
 **--format**=*FORMAT*
 :   Output format: **text** (default), **json**, or **csv**.
@@ -60,9 +63,11 @@ Shows detailed information about a specific symbolic link, including:
 
 Aliases: **show**
 
-## rm *link_name*
+## rm *link_name* | --match *GLOB*
 
 Removes a symbolic link from the configured directory. Prompts for confirmation before deletion unless **--force** is specified.
+
+With **--match** *GLOB*, removes every link whose name matches the glob after a single confirmation. The operation is recorded in the undo journal as a bulk op.
 
 Aliases: **remove**, **delete**
 
@@ -75,6 +80,9 @@ Checks all symbolic links and reports their status. Shows:
 - Summary statistics
 - Suggestions for fixing broken links
 
+Exits non-zero (status 1) when at least one broken link is found, so CI
+pipelines and pre-commit hooks can rely on its status.
+
 Aliases: **check**
 
 ## fix
@@ -83,11 +91,40 @@ Automatically removes all broken symbolic links after showing what will be remov
 
 Aliases: **clean**
 
-## create [*link_name*] *source_path*
+## create [*link_name*] *source_path* | --from *DIR*
 
 Creates a new symbolic link. If *link_name* is omitted, you will be prompted to enter one. The tool automatically suggests a name based on the source filename with common extensions removed.
 
+Replacement of an existing link is atomic: **sym** creates a temporary symlink alongside the destination and uses **rename(2)** to put it in place, so there is never a window where the destination is missing.
+
+With **--from** *DIR*, batch-creates links for every regular file at the top level of *DIR* (dotfiles and directories are skipped; an identical existing link is treated as idempotent).
+
 You can also use the shorthand: **sym** [*link_name*] *source_path*
+
+## edit *link_name* *new_target*
+
+Atomically retargets an existing symbolic link to point at *new_target*. The previous target is recorded in the undo journal.
+
+Aliases: **retarget**
+
+## completion *bash|zsh|fish*
+
+Prints a shell completion script to stdout. Install by redirecting to a file the shell loads automatically, or source it directly from your shell rc.
+
+## undo
+
+Reverses the most recent mutating operation (create, rm, edit, fix, batch create/remove, or snapshot restore). Single-level history only — each new mutating command overwrites the journal.
+
+## snapshot *save* [*file*] | *list* | *restore* *file*
+
+**save**
+:   Writes the full state of the link directory to a JSON file. With no argument, writes to **$SYM_STATE_DIR/snapshots/YYYYMMDD-HHMMSS.json**.
+
+**list**
+:   Lists snapshot files in the default directory.
+
+**restore** *file*
+:   Computes the delta between current state and the snapshot (removes, creates, retargets), confirms, and applies atomically. The pre-restore state is recorded so **sym undo** reverses the restore.
 
 ## *link_name*
 
@@ -161,6 +198,14 @@ Create multiple short aliases:
 
         $ export SYM_DIR="$HOME/bin"
         $ sym mylink /path/to/file
+
+**SYM_STATE_DIR**
+:   Directory for the undo journal and snapshot files. Default: **~/.local/share/sym**
+
+    Example:
+
+        $ export SYM_STATE_DIR="$HOME/var/sym-state"
+        $ sym undo
 
 **NO_COLOR**
 :   When set (to any value), disables colored output. Useful for scripts or when output is redirected.
@@ -282,7 +327,7 @@ Written by Roel Van Gils.
 
 # COPYRIGHT
 
-Copyright © 2025 Roel Van Gils. License: MIT
+Copyright © 2025-2026 Roel Van Gils. License: MIT
 
 This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.

@@ -5,6 +5,42 @@ All notable changes to sym will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-16
+
+### Added
+- `sym edit <link> <new_target>` — first-class retarget verb (atomic).
+- `sym completion <bash|zsh|fish>` — prints shell completion to stdout.
+  Homebrew formula auto-installs completions via
+  `generate_completions_from_executable`.
+- `sym ls --name <glob>` — filter listings by a shell glob (works in text,
+  json, and csv formats).
+- `sym create --from <dir>` — batch-create links for every top-level file
+  in a directory (skips dotfiles and directories; idempotent).
+- `sym rm --match <glob>` — batch-remove links by name glob.
+- `sym undo` — reverses the most recent create, rm, edit, fix, batch, or
+  snapshot-restore operation. Single-level history stored in
+  `$SYM_STATE_DIR/last_op.json`.
+- `sym snapshot save [<file>]` / `snapshot list` / `snapshot restore <file>`
+  — capture and restore the full `$SYM_DIR` state as JSON. Default snapshot
+  location: `$SYM_STATE_DIR/snapshots/`.
+- `SYM_STATE_DIR` environment variable (default `~/.local/share/sym`) for
+  undo journal and snapshot storage.
+
+### Changed
+- `sym verify` now exits non-zero when broken links are found, so CI and
+  pre-commit hooks can rely on its exit status.
+- `create` and `edit` now replace existing symlinks atomically via a temp
+  symlink + `rename(2)` so there is never a window where the destination
+  is missing during a swap.
+- `create`, `edit`, `rm`, `fix`, `batch_create`, `batch_rm`, and
+  `snapshot restore` verify that `$SYM_DIR` is writable before mutating,
+  with a clearer error message when it isn't.
+- `fix`, `batch_create`, `batch_rm`, and `snapshot restore` install a
+  SIGINT/SIGTERM trap so Ctrl-C exits with a warning and code 130
+  instead of leaving no trace.
+- Path resolution uses an internal `_realpath` helper with a pure-bash
+  fallback, so `sym` works on systems that don't ship `realpath`.
+
 ## [1.0.2] - 2026-04-16
 
 ### Fixed
@@ -166,6 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.1.0]: https://github.com/11ways/sym/releases/tag/v1.1.0
 [1.0.2]: https://github.com/11ways/sym/releases/tag/v1.0.2
 [1.0.1]: https://github.com/11ways/sym/releases/tag/v1.0.1
 [1.0.0]: https://github.com/11ways/sym/releases/tag/v1.0.0

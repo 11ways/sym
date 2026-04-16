@@ -2,7 +2,9 @@
 
 A simple, user-friendly command-line tool for managing symbolic links in `~/.local/bin`.
 
-![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)
+**Homepage:** <https://11ways.github.io/sym/>
+
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
 
@@ -10,9 +12,12 @@ A simple, user-friendly command-line tool for managing symbolic links in `~/.loc
 
 ✨ **Simple & Intuitive** - Easy-to-use commands with helpful prompts
 🎨 **Beautiful Output** - Color-coded display with smart formatting
-🔍 **Link Management** - List, create, inspect, and remove symbolic links
-🛡️ **Safety First** - Validates inputs, confirms destructive operations
-🔧 **Maintenance Tools** - Verify and fix broken links automatically
+🔍 **Link Management** - List, create, inspect, edit, and remove symbolic links
+🛡️ **Safety First** - Validates inputs, confirms destructive operations, atomic replacement
+↩️  **Undo & Snapshots** - Reverse the last op, capture and restore full state as JSON
+🔧 **Maintenance Tools** - Verify and fix broken links automatically; `verify` exits non-zero for CI
+⌨️  **Shell Completion** - Tab-completion for bash, zsh, and fish via `sym completion <shell>`
+📦 **Batch Ops** - Create links for a whole directory, or remove many at once by name glob
 📊 **Multiple Formats** - Export to text, JSON, or CSV
 🚀 **Cross-Platform** - Works on both macOS and Linux
 ⚡ **Fast & Reliable** - Built with bash best practices
@@ -127,7 +132,7 @@ man sym
 
 ```bash
 sym --version
-# Output: sym version 1.0.1
+# Output: sym version 1.1.0
 ```
 
 ### Uninstalling
