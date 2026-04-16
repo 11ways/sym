@@ -813,7 +813,6 @@ Copyright (c) 2025 Roel van Gils
 
 - **Issues**: https://github.com/11ways/sym/issues
 - **Discussions**: https://github.com/11ways/sym/discussions
-- **Email**: your-email@example.com
 
 ---
 
