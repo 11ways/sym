@@ -4,7 +4,7 @@ A simple, user-friendly command-line tool for managing symbolic links in `~/.loc
 
 **Homepage:** <https://11ways.github.io/sym/>
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
 
@@ -118,7 +118,7 @@ man sym
 
 ```bash
 sym --version
-# Output: sym version 1.1.0
+# Output: sym version 1.2.0
 ```
 
 ### Uninstalling

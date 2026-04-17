@@ -5,6 +5,18 @@ All notable changes to sym will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-04-17
+
+### Added
+- `sym doctor` — one-shot setup diagnostics. Checks bash version, that
+  `$SYM_DIR` exists and is writable, `$PATH` membership, `$SYM_STATE_DIR`
+  writability, broken-link count, availability of core dependencies,
+  whether a native `realpath` is present, whether each shell's completion
+  file is detected on disk, and whether the man page is reachable via
+  `man -w`. Output is text by default; `--format=json` emits a structured
+  document with a `summary` tally. Exits non-zero on any FAIL entry so
+  post-install scripts and CI can verify setup.
+
 ## [1.1.0] - 2026-04-16
 
 ### Added
@@ -202,6 +214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+[1.2.0]: https://github.com/11ways/sym/releases/tag/v1.2.0
 [1.1.0]: https://github.com/11ways/sym/releases/tag/v1.1.0
 [1.0.2]: https://github.com/11ways/sym/releases/tag/v1.0.2
 [1.0.1]: https://github.com/11ways/sym/releases/tag/v1.0.1

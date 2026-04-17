@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # sym - Symbolic Link Manager
-# Version: 1.1.0
+# Version: 1.2.0
 # Author: Roel Van Gils
 # License: MIT
 # Description: A simple, user-friendly tool for managing symbolic links in ~/.local/bin
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # === METADATA ===
-readonly VERSION="1.1.0"
+readonly VERSION="1.2.0"
 readonly SCRIPT_NAME="sym"
 
 # === CONFIGURATION ===
@@ -400,6 +400,10 @@ show_help() {
     echo ""
     echo -e "    ${C_GREEN}undo${C_RESET}"
     echo "        Reverses the most recent create/rm/edit/fix/batch operation."
+    echo ""
+    echo -e "    ${C_GREEN}doctor${C_RESET} [--format=text|json]"
+    echo "        Runs setup diagnostics (PATH, writable dirs, broken links,"
+    echo "        completions, man page). Exits non-zero on any failure."
     echo ""
     echo -e "    ${C_GREEN}snapshot${C_RESET} save [<file>] | list | restore <file>"
     echo "        Capture and restore the full state of '$DEST_DIR' as JSON."
@@ -1689,6 +1693,205 @@ snapshot_restore() {
     printf '%s' "$undo_buffer" | record_last_op_bulk "restore"
 }
 
+# Runs a one-shot setup health check. Each check contributes a line to the
+# output with status pass|warn|fail. Exit code: 0 if zero fails, 1 otherwise.
+run_doctor() {
+    local format="text"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --format=*) format="${1#*=}"; shift ;;
+            --format)
+                shift
+                [[ $# -eq 0 ]] && error_exit "--format requires a value" 4
+                format="$1"; shift
+                ;;
+            *) error_exit "Unknown option for doctor: $1" 4 ;;
+        esac
+    done
+    if [[ ! "$format" =~ ^(text|json)$ ]]; then
+        error_exit "Invalid format: $format. Use text or json." 4
+    fi
+
+    local -a ids=() statuses=() details=()
+
+    # 1. sym version (informational)
+    ids+=("version"); statuses+=("pass"); details+=("$VERSION")
+
+    # 2. bash >= 3.2
+    local bv="${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}.${BASH_VERSINFO[2]:-0}"
+    if (( BASH_VERSINFO[0] > 3 )) || (( BASH_VERSINFO[0] == 3 && BASH_VERSINFO[1] >= 2 )); then
+        ids+=("bash"); statuses+=("pass"); details+=("$bv")
+    else
+        ids+=("bash"); statuses+=("fail"); details+=("$bv (need >= 3.2)")
+    fi
+
+    # 3. $SYM_DIR writable
+    if [[ -d "$DEST_DIR" && -w "$DEST_DIR" ]]; then
+        ids+=("sym_dir"); statuses+=("pass"); details+=("${DEST_DIR/#$HOME/\~} (writable)")
+    elif [[ -d "$DEST_DIR" ]]; then
+        ids+=("sym_dir"); statuses+=("fail"); details+=("${DEST_DIR/#$HOME/\~} not writable — try: chmod u+w \"$DEST_DIR\"")
+    else
+        ids+=("sym_dir"); statuses+=("fail"); details+=("${DEST_DIR/#$HOME/\~} does not exist")
+    fi
+
+    # 4. $SYM_DIR in $PATH
+    if [[ ":$PATH:" == *":$DEST_DIR:"* ]]; then
+        ids+=("path"); statuses+=("pass"); details+=("${DEST_DIR/#$HOME/\~} present in \$PATH")
+    else
+        ids+=("path"); statuses+=("warn"); details+=("${DEST_DIR/#$HOME/\~} not in \$PATH — add: export PATH=\"\$PATH:$DEST_DIR\"")
+    fi
+
+    # 5. $SYM_STATE_DIR
+    if [[ -d "$STATE_DIR" ]] || mkdir -p "$STATE_DIR" 2>/dev/null; then
+        if [[ -w "$STATE_DIR" ]]; then
+            ids+=("state_dir"); statuses+=("pass"); details+=("${STATE_DIR/#$HOME/\~} (writable)")
+        else
+            ids+=("state_dir"); statuses+=("warn"); details+=("${STATE_DIR/#$HOME/\~} not writable — undo/snapshot disabled")
+        fi
+    else
+        ids+=("state_dir"); statuses+=("warn"); details+=("cannot create ${STATE_DIR/#$HOME/\~} — undo/snapshot disabled")
+    fi
+
+    # 6. Broken links
+    local total=0 broken=0 link
+    while IFS= read -r link; do
+        [[ -z "$link" ]] && continue
+        total=$((total + 1))
+        [[ ! -e "$link" ]] && broken=$((broken + 1))
+    done < <(find "$DEST_DIR" -maxdepth 1 -type l 2>/dev/null)
+    if (( broken == 0 )); then
+        ids+=("links"); statuses+=("pass"); details+=("$total total, 0 broken")
+    else
+        ids+=("links"); statuses+=("warn"); details+=("$total total, $broken broken — run: sym fix")
+    fi
+
+    # 7. Core deps
+    local dep missing=""
+    for dep in readlink ln find date basename dirname sed stat; do
+        command -v "$dep" >/dev/null 2>&1 || missing+=" $dep"
+    done
+    if [[ -z "$missing" ]]; then
+        ids+=("core_deps"); statuses+=("pass"); details+=("readlink, ln, find, date, basename, dirname, sed, stat")
+    else
+        ids+=("core_deps"); statuses+=("fail"); details+=("missing:$missing")
+    fi
+
+    # 8. realpath native binary (informational — we have a fallback)
+    if command -v realpath >/dev/null 2>&1; then
+        ids+=("realpath"); statuses+=("pass"); details+=("$(command -v realpath) (native)")
+    else
+        ids+=("realpath"); statuses+=("pass"); details+=("pure-bash fallback (no native realpath found)")
+    fi
+
+    # 9-11. Shell completions (best-effort file-existence scan)
+    local found
+    found=""
+    for p in \
+        /opt/homebrew/etc/bash_completion.d/sym \
+        /usr/local/etc/bash_completion.d/sym \
+        /etc/bash_completion.d/sym \
+        "$HOME/.bash_completion.d/sym"; do
+        [[ -f "$p" ]] && { found="$p"; break; }
+    done
+    if [[ -n "$found" ]]; then
+        ids+=("bash_completion"); statuses+=("pass"); details+=("$found")
+    else
+        ids+=("bash_completion"); statuses+=("warn"); details+=("not detected — run: sym completion bash > /usr/local/etc/bash_completion.d/sym")
+    fi
+
+    found=""
+    for p in \
+        /opt/homebrew/share/zsh/site-functions/_sym \
+        /usr/local/share/zsh/site-functions/_sym \
+        /usr/share/zsh/site-functions/_sym \
+        "$HOME/.zsh/completions/_sym"; do
+        [[ -f "$p" ]] && { found="$p"; break; }
+    done
+    if [[ -n "$found" ]]; then
+        ids+=("zsh_completion"); statuses+=("pass"); details+=("$found")
+    else
+        ids+=("zsh_completion"); statuses+=("warn"); details+=("not detected — run: sym completion zsh > ~/.zsh/completions/_sym")
+    fi
+
+    found=""
+    for p in \
+        "$HOME/.config/fish/completions/sym.fish" \
+        /opt/homebrew/share/fish/vendor_completions.d/sym.fish \
+        /usr/share/fish/vendor_completions.d/sym.fish; do
+        [[ -f "$p" ]] && { found="$p"; break; }
+    done
+    if [[ -n "$found" ]]; then
+        ids+=("fish_completion"); statuses+=("pass"); details+=("$found")
+    else
+        ids+=("fish_completion"); statuses+=("warn"); details+=("not detected — run: sym completion fish > ~/.config/fish/completions/sym.fish")
+    fi
+
+    # 12. Man page reachable
+    local man_path
+    if man_path=$(man -w sym 2>/dev/null) && [[ -n "$man_path" ]]; then
+        ids+=("man_page"); statuses+=("pass"); details+=("$(echo "$man_path" | head -1)")
+    else
+        ids+=("man_page"); statuses+=("warn"); details+=("not on MANPATH — add: export MANPATH=\"\$MANPATH:$HOME/.local/share/man\"")
+    fi
+
+    # Tally and render
+    local pass_n=0 warn_n=0 fail_n=0 i
+    for (( i=0; i<${#statuses[@]}; i++ )); do
+        case "${statuses[i]}" in
+            pass) pass_n=$((pass_n + 1)) ;;
+            warn) warn_n=$((warn_n + 1)) ;;
+            fail) fail_n=$((fail_n + 1)) ;;
+        esac
+    done
+
+    if [[ "$format" == "json" ]]; then
+        echo "{"
+        printf '  "version": "%s",\n' "$(json_escape "$VERSION")"
+        echo '  "checks": ['
+        for (( i=0; i<${#ids[@]}; i++ )); do
+            local comma=""
+            [[ $i -lt $((${#ids[@]} - 1)) ]] && comma=","
+            printf '    {"id": "%s", "status": "%s", "detail": "%s"}%s\n' \
+                "$(json_escape "${ids[i]}")" \
+                "$(json_escape "${statuses[i]}")" \
+                "$(json_escape "${details[i]}")" \
+                "$comma"
+        done
+        echo '  ],'
+        printf '  "summary": {"pass": %d, "warn": %d, "fail": %d}\n' \
+            "$pass_n" "$warn_n" "$fail_n"
+        echo "}"
+    else
+        echo ""
+        echo -e "${C_BOLD}sym doctor${C_RESET} — setup diagnostics"
+        echo ""
+        # Find max id length for alignment
+        local max_id=0
+        for (( i=0; i<${#ids[@]}; i++ )); do
+            (( ${#ids[i]} > max_id )) && max_id=${#ids[i]}
+        done
+        for (( i=0; i<${#ids[@]}; i++ )); do
+            local glyph
+            case "${statuses[i]}" in
+                pass) glyph="${C_GREEN}✓${C_RESET}" ;;
+                warn) glyph="${C_YELLOW}~${C_RESET}" ;;
+                fail) glyph="${C_RED}✗${C_RESET}" ;;
+            esac
+            printf "  %b %-${max_id}s  %s\n" "$glyph" "${ids[i]}" "${details[i]}"
+        done
+        echo ""
+        if (( fail_n == 0 && warn_n == 0 )); then
+            success "All checks passed."
+        elif (( fail_n == 0 )); then
+            info "OK. $warn_n warning(s), 0 error(s)."
+        else
+            warn "$fail_n error(s), $warn_n warning(s), $pass_n pass."
+        fi
+    fi
+
+    (( fail_n == 0 )) && return 0 || return 1
+}
+
 # === MAIN SCRIPT LOGIC ===
 
 main() {
@@ -1794,6 +1997,9 @@ main() {
                 error_exit "'sym undo' takes no arguments." 4
             fi
             undo_last_op
+            ;;
+        doctor)
+            run_doctor "$@"
             ;;
         snapshot)
             if [[ $# -lt 1 ]]; then
