@@ -2,7 +2,7 @@
 title: SYM
 section: 1
 header: User Manual
-footer: sym 1.1.0
+footer: sym 1.2.0
 date: April 2026
 ---
 
@@ -114,6 +114,10 @@ Prints a shell completion script to stdout. Install by redirecting to a file the
 ## undo
 
 Reverses the most recent mutating operation (create, rm, edit, fix, batch create/remove, or snapshot restore). Single-level history only — each new mutating command overwrites the journal.
+
+## doctor [--format=*FORMAT*]
+
+Runs a one-shot setup health check. Verifies bash version, that **$SYM_DIR** exists and is writable, **$PATH** membership, **$SYM_STATE_DIR** writability, broken-link count, core command availability, native **realpath**, shell-completion detection, and that the man page is reachable. Exits non-zero when any check fails. Use **--format=json** for a machine-readable summary.
 
 ## snapshot *save* [*file*] | *list* | *restore* *file*
 

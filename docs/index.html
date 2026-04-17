@@ -242,6 +242,14 @@
         <h2>Changelog</h2>
 
         <div class="changelog-entry">
+            <div class="ver"><strong>1.2.0</strong><time>April 2026</time></div>
+            <ul>
+                <li>New <code>sym doctor</code> command: a one-shot setup check (PATH, writable dirs, broken links, completions, man page). Exits non-zero on failure so post-install scripts and CI can verify setup.</li>
+                <li><code>--format=json</code> supported for <code>doctor</code> output.</li>
+            </ul>
+        </div>
+
+        <div class="changelog-entry">
             <div class="ver"><strong>1.1.0</strong><time>April 2026</time></div>
             <ul>
                 <li>New commands: <code>edit</code>, <code>undo</code>, <code>snapshot save/list/restore</code>, <code>completion</code>.</li>
