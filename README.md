@@ -180,8 +180,8 @@ sym <source_path>
 **Examples:**
 
 ```bash
-# Create a link to Sublime Text
-sym sublime /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl
+# Create a link to Visual Studio Code
+sym code /Applications/Visual\ Studio\ Code.app/Contents/Resources/app/bin/code
 
 # Create a link to a Python script (will prompt for name)
 sym ~/scripts/my-tool.py
@@ -228,7 +228,7 @@ Existing symbolic links in '~/.local/bin':
                  sym → ~/Repos/sym/sym.sh
               swatch → ~/swatch/swatch.sh
                speak → ~/Repos/simple-speaker/speak.sh
-                  km → /Applications/Keyboard Maestro.app/Contents/MacOS/keyboardmaestro
+              chrome → /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
                  yap → ~/repos/slack-extract/yap (Does not exist!)
 ```
 
@@ -249,17 +249,17 @@ sym <link_name>
 **Example Output:**
 
 ```
-  → From:    ~/.local/bin/sublime
-  → To:      /Applications/Sublime Text.app/Contents/SharedSupport/bin/subl
+  → From:    ~/.local/bin/code
+  → To:      /Applications/Visual Studio Code.app/Contents/Resources/app/bin/code
   → Created: 2025-10-31 14:23:45
-  → Size:    2.4MB
+  → Size:    4.8KB
   → Type:    File
 
 To delete:
-   sym rm sublime
+   sym rm code
 
 To change the destination:
-   sym sublime <new_destination>
+   sym code <new_destination>
 ```
 
 ### Removing Links
@@ -381,10 +381,10 @@ sym ls --format=json
 ```json
 [
   {
-    "name": "sublime",
-    "target": "/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl",
+    "name": "code",
+    "target": "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code",
     "status": "ok",
-    "size": "2.4MB",
+    "size": "4.8KB",
     "created": "2025-10-31 14:23:45"
   },
   {
@@ -407,7 +407,7 @@ sym ls --format=csv
 
 ```csv
 name,target,status,size,created
-sublime,/Applications/Sublime Text.app/Contents/SharedSupport/bin/subl,ok,2.4MB,2025-10-31 14:23:45
+code,/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code,ok,4.8KB,2025-10-31 14:23:45
 oldtool,~/bin/removed-tool,broken,,2025-09-15 10:30:22
 ```
 
@@ -455,14 +455,14 @@ export PATH="$PATH:$HOME/.local/bin"
 **Link to GUI Applications (macOS):**
 
 ```bash
-# Sublime Text
-sym sublime /Applications/Sublime\ Text.app/Contents/SharedSupport/bin/subl
-
 # Visual Studio Code
 sym code /Applications/Visual\ Studio\ Code.app/Contents/Resources/app/bin/code
 
-# Keyboard Maestro
-sym km /Applications/Keyboard\ Maestro.app/Contents/MacOS/keyboardmaestro
+# Google Chrome
+sym chrome /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome
+
+# Firefox
+sym firefox /Applications/Firefox.app/Contents/MacOS/firefox
 ```
 
 **Link to Scripts:**
