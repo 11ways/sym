@@ -1,12 +1,23 @@
-# sym - Symbolic Link Manager
+<p align="center">
+  <img src="docs/banner.png" width="640"
+       alt="sym — a Symbolic Link Manager. Two document icons labelled A and B joined by a chain-link symbol on a dark blue background.">
+</p>
 
-A simple, user-friendly command-line tool for managing symbolic links in `~/.local/bin`.
+<h1 align="center">sym — Symbolic Link Manager</h1>
 
-**Homepage:** <https://11ways.github.io/sym/>
+<p align="center">
+  A simple, user-friendly command-line tool for managing symbolic links in <code>~/.local/bin</code>.
+</p>
 
-![Version](https://img.shields.io/badge/version-1.0.5-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
+<p align="center">
+  <a href="https://11ways.github.io/sym/">Homepage</a>
+</p>
+
+<p align="center">
+  <img alt="Version 1.0.5" src="https://img.shields.io/badge/version-1.0.5-blue.svg">
+  <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green.svg">
+  <img alt="Platform: macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg">
+</p>
 
 ## Table of Contents
 
@@ -738,12 +749,14 @@ echo "Done!"
 - Works with all distributions
 - Supports systemd paths
 
-### Windows (WSL)
+### Windows
 
-✅ Supported via WSL (Windows Subsystem for Linux)
-- Use Linux commands in WSL
-- Can link to Windows executables
-- Requires proper PATH configuration
+❌ Not supported. `sym` is a Bash tool that relies on Unix symbolic links and
+shell utilities, which native Windows does not provide.
+
+If you need it on a Windows machine, run it inside **WSL (Windows Subsystem for
+Linux)** — that is a Linux environment, and `sym` is supported there exactly as
+it is on any other Linux system. It will not work in PowerShell or `cmd.exe`.
 
 ## Performance Notes
 
