@@ -242,6 +242,13 @@
         <h2>Changelog</h2>
 
         <div class="changelog-entry">
+            <div class="ver"><strong>1.0.5</strong><time>June 2026</time></div>
+            <ul>
+                <li>Order-forgiving link creation: <code>sym &lt;a&gt; &lt;b&gt;</code> accepts the source path and link name in either order. The argument that is an existing path (or contains a <code>/</code>) is treated as the source.</li>
+            </ul>
+        </div>
+
+        <div class="changelog-entry">
             <div class="ver"><strong>1.0.4</strong><time>April 2026</time></div>
             <ul>
                 <li>New <code>sym doctor</code> command: a one-shot setup check (PATH, writable dirs, broken links, completions, man page). Exits non-zero on failure so post-install scripts and CI can verify setup.</li>

@@ -2,8 +2,8 @@
 title: SYM
 section: 1
 header: User Manual
-footer: sym 1.0.4
-date: April 2026
+footer: sym 1.0.5
+date: June 2026
 ---
 
 # NAME

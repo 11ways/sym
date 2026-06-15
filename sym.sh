@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # sym - Symbolic Link Manager
-# Version: 1.0.4
+# Version: 1.0.5
 # Author: Roel Van Gils
 # License: MIT
 # Description: A simple, user-friendly tool for managing symbolic links in ~/.local/bin
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # === METADATA ===
-readonly VERSION="1.0.4"
+readonly VERSION="1.0.5"
 readonly SCRIPT_NAME="sym"
 
 # === CONFIGURATION ===
@@ -703,6 +703,54 @@ show_link_info() {
     echo "To change the destination:"
     echo "   sym $link_name <new_destination>"
     echo ""
+}
+
+# Figures out which of two arguments is the source path and which is the
+# link name, then creates the link. This makes argument order forgiving:
+# whichever argument points to an existing path is treated as the source,
+# and the other is treated as the desired link name.
+create_link_smart() {
+    local arg1="$1"
+    local arg2="$2"
+
+    # A link name can never contain a path separator (see validate_link_name),
+    # so an argument containing '/' is unambiguously the source path. This keeps
+    # an explicit, typo'd or not-yet-existing path (e.g. 'sym vi /usr/bin/vmi')
+    # in the source slot, producing a clear "Source not found" error instead of
+    # a confusing "Link name cannot contain path separators" one.
+    local arg1_is_path=false
+    local arg2_is_path=false
+    [[ "$arg1" == */* ]] && arg1_is_path=true
+    [[ "$arg2" == */* ]] && arg2_is_path=true
+
+    if [[ "$arg1_is_path" == true && "$arg2_is_path" == false ]]; then
+        create_link "$arg1" "$arg2"
+        return
+    elif [[ "$arg2_is_path" == true && "$arg1_is_path" == false ]]; then
+        create_link "$arg2" "$arg1"
+        return
+    fi
+
+    # Neither argument looks like a path: decide by which one actually exists
+    # on disk. Whichever exists is treated as the source, the other as the name.
+    local arg1_exists=false
+    local arg2_exists=false
+    [[ -e "$arg1" || -L "$arg1" ]] && arg1_exists=true
+    [[ -e "$arg2" || -L "$arg2" ]] && arg2_exists=true
+
+    if [[ "$arg1_exists" == true && "$arg2_exists" == false ]]; then
+        # First arg is the existing path → it's the source.
+        create_link "$arg1" "$arg2"
+    elif [[ "$arg1_exists" == true && "$arg2_exists" == true ]]; then
+        # Both exist: fall back to the documented order (source is second),
+        # but let the user know the order was ambiguous.
+        warn "Both arguments exist as paths; assuming '$arg2' is the source and '$arg1' is the link name."
+        create_link "$arg2" "$arg1"
+    else
+        # Second arg exists (documented order), or neither exists (keep the
+        # documented order so the error points at the intended source).
+        create_link "$arg2" "$arg1"
+    fi
 }
 
 # Creates a symbolic link
@@ -2042,8 +2090,8 @@ main() {
                 create_link "$source_path" "$link_name"
                 did_create=true
             elif [[ $# -eq 2 ]]; then
-                # Both name and source provided
-                create_link "$2" "$1"
+                # Both name and source provided (order-forgiving)
+                create_link_smart "$1" "$2"
                 did_create=true
             else
                 error_exit "'sym create' requires 1 or 2 arguments." 4
@@ -2079,8 +2127,8 @@ main() {
                     did_create=true
                 fi
             elif [[ $# -eq 1 ]]; then
-                # sym <link_name> <source_path>
-                create_link "$1" "$command"
+                # sym <link_name> <source_path> (order-forgiving)
+                create_link_smart "$command" "$1"
                 did_create=true
             else
                 error_exit "Too many arguments.\nUse --help for usage information." 4
