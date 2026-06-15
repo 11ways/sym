@@ -5,6 +5,15 @@ All notable changes to sym will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- `sym snapshot restore` now JSON-unescapes link names and targets, so a
+  snapshot round-trips correctly even when a path contains a quote,
+  backslash, newline, tab, or carriage return. Previously these characters
+  were restored with their backslash escapes left intact (e.g. `a"b` became
+  `a\"b`), silently producing a broken link. ([#1](https://github.com/11ways/sym/issues/1))
+
 ## [1.0.5] - 2026-06-15
 
 ### Added

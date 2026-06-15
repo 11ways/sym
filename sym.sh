@@ -207,6 +207,24 @@ json_escape() {
     printf '%s' "$s"
 }
 
+# Reverses json_escape: turns a JSON string-literal body back into the raw
+# value. A single-pass set of global replacements cannot decode \\ correctly
+# (e.g. the encoded "\\n", which is a literal backslash + 'n', would be
+# misread as a newline), so we first park every escaped backslash on a
+# sentinel (ASCII Unit Separator, \x1F — the same byte the undo journal
+# already treats as unsupported in paths), decode the remaining escapes,
+# then restore the sentinels to single backslashes.
+json_unescape() {
+    local s="$1" sen=$'\x1f'
+    s="${s//\\\\/$sen}"
+    s="${s//\\n/$'\n'}"
+    s="${s//\\r/$'\r'}"
+    s="${s//\\t/$'\t'}"
+    s="${s//\\\"/\"}"
+    s="${s//$sen/\\}"
+    printf '%s' "$s"
+}
+
 # Escapes a field for safe inclusion in CSV output (RFC 4180).
 csv_escape() {
     local s="$1"
@@ -1594,7 +1612,11 @@ snapshot_restore() {
     require_writable_dest
 
     # Parse snapshot entries. Our snapshot format has one-field-per-line
-    # objects, so we can extract name/target with a line-based scan.
+    # objects, so we can extract name/target with a line-based scan. Values
+    # are written JSON-escaped by snapshot_save, so we strip the surrounding
+    # `"..."` (and any trailing comma) and json_unescape the body. The field
+    # separator `: "` cannot occur inside a value because the quote there
+    # would have been escaped to `\"`, so the prefix strip is unambiguous.
     local -a snap_names=()
     local -a snap_targets=()
     local cur_name="" cur_target=""
@@ -1602,15 +1624,17 @@ snapshot_restore() {
     while IFS= read -r line || [[ -n "$line" ]]; do
         case "$line" in
             *'"name":'*)
-                cur_name=$(printf '%s' "$line" | sed -E 's/.*"name": "(.*)".*/\1/')
-                cur_name="${cur_name%,}"
-                cur_name="${cur_name%\"}"
+                cur_name="${line#*: \"}"   # drop everything up to the opening quote
+                cur_name="${cur_name%,}"   # drop an optional trailing comma
+                cur_name="${cur_name%\"}"  # drop the closing quote
+                cur_name=$(json_unescape "$cur_name")
                 in_obj=true
                 ;;
             *'"target":'*)
-                cur_target=$(printf '%s' "$line" | sed -E 's/.*"target": "(.*)".*/\1/')
+                cur_target="${line#*: \"}"
                 cur_target="${cur_target%,}"
                 cur_target="${cur_target%\"}"
+                cur_target=$(json_unescape "$cur_target")
                 ;;
             *'}'*)
                 if [[ "$in_obj" == true && -n "$cur_name" ]]; then
