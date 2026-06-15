@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version 1.0.6" src="https://img.shields.io/badge/version-1.0.6-blue.svg">
+  <img alt="Version 1.0.7" src="https://img.shields.io/badge/version-1.0.7-blue.svg">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green.svg">
   <img alt="Platform: macOS and Linux" src="https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg">
 </p>
@@ -129,7 +129,7 @@ man sym
 
 ```bash
 sym --version
-# Output: sym version 1.0.6
+# Output: sym version 1.0.7
 ```
 
 ### Uninstalling

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # sym - Symbolic Link Manager
-# Version: 1.0.6
+# Version: 1.0.7
 # Author: Roel Van Gils
 # License: MIT
 # Description: A simple, user-friendly tool for managing symbolic links in ~/.local/bin
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # === METADATA ===
-readonly VERSION="1.0.6"
+readonly VERSION="1.0.7"
 readonly SCRIPT_NAME="sym"
 
 # === CONFIGURATION ===
@@ -207,16 +207,21 @@ json_escape() {
     printf '%s' "$s"
 }
 
-# Reverses json_escape(). Decode order matters: resolve the multi-char
-# escapes first and decode the backslash last, so a literal "\\n" in the
-# original (stored as "\\\\n") is not mistaken for a newline escape.
+# Reverses json_escape: turns a JSON string-literal body back into the raw
+# value. A single-pass set of global replacements cannot decode \\ correctly
+# (e.g. the encoded "\\n", which is a literal backslash + 'n', would be
+# misread as a newline), so we first park every escaped backslash on a
+# sentinel (ASCII Unit Separator, \x1F — the same byte the undo journal
+# already treats as unsupported in paths), decode the remaining escapes,
+# then restore the sentinels to single backslashes.
 json_unescape() {
-    local s="$1"
+    local s="$1" sen=$'\x1f'
+    s="${s//\\\\/$sen}"
     s="${s//\\n/$'\n'}"
     s="${s//\\r/$'\r'}"
     s="${s//\\t/$'\t'}"
     s="${s//\\\"/\"}"
-    s="${s//\\\\/\\}"
+    s="${s//$sen/\\}"
     printf '%s' "$s"
 }
 
@@ -1606,38 +1611,62 @@ snapshot_restore() {
 
     require_writable_dest
 
-    # Parse snapshot entries. Our snapshot format has one-field-per-line
-    # objects, so we can extract name/target with a line-based scan.
+    # Parse snapshot entries into parallel name/target arrays.
     local -a snap_names=()
     local -a snap_targets=()
-    local cur_name="" cur_target=""
-    local in_obj=false
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        case "$line" in
-            *'"name":'*)
-                cur_name=$(printf '%s' "$line" | sed -E 's/.*"name": "(.*)".*/\1/')
-                cur_name="${cur_name%,}"
-                cur_name="${cur_name%\"}"
-                cur_name=$(json_unescape "$cur_name")
-                in_obj=true
-                ;;
-            *'"target":'*)
-                cur_target=$(printf '%s' "$line" | sed -E 's/.*"target": "(.*)".*/\1/')
-                cur_target="${cur_target%,}"
-                cur_target="${cur_target%\"}"
-                cur_target=$(json_unescape "$cur_target")
-                ;;
-            *'}'*)
-                if [[ "$in_obj" == true && -n "$cur_name" ]]; then
-                    snap_names+=("$cur_name")
-                    snap_targets+=("$cur_target")
-                fi
-                cur_name=""
-                cur_target=""
-                in_obj=false
-                ;;
-        esac
-    done < "$file"
+    local parsed_with_jq=false
+
+    # Fast path: when jq is available, let it do the JSON parsing. It handles
+    # every escape sequence correctly and sidesteps the quoting pitfalls of a
+    # hand-rolled scan. Pairs are emitted NUL-delimited (jq's "\u0000") because
+    # NUL is the one byte a filesystem path can never contain, so values with
+    # embedded quotes, backslashes, or newlines survive intact. The `jq -e .`
+    # gate means a malformed file falls through to the text scanner below.
+    if command -v jq >/dev/null 2>&1 && jq -e . "$file" >/dev/null 2>&1; then
+        local jq_name jq_target
+        while IFS= read -r -d '' jq_name && IFS= read -r -d '' jq_target; do
+            snap_names+=("$jq_name")
+            snap_targets+=("$jq_target")
+        done < <(jq -j '.links[]? | (.name // "", "\u0000", .target // "", "\u0000")' "$file" 2>/dev/null)
+        parsed_with_jq=true
+    fi
+
+    # Fallback: our snapshot format has one-field-per-line objects, so we can
+    # extract name/target with a line-based scan. Values are written
+    # JSON-escaped by snapshot_save, so we strip the surrounding `"..."` (and
+    # any trailing comma) and json_unescape the body. The field separator
+    # `: "` cannot occur inside a value because the quote there would have
+    # been escaped to `\"`, so the prefix strip is unambiguous.
+    if [[ "$parsed_with_jq" == false ]]; then
+        local line cur_name="" cur_target=""
+        local in_obj=false
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            case "$line" in
+                *'"name":'*)
+                    cur_name="${line#*: \"}"   # drop everything up to the opening quote
+                    cur_name="${cur_name%,}"   # drop an optional trailing comma
+                    cur_name="${cur_name%\"}"  # drop the closing quote
+                    cur_name=$(json_unescape "$cur_name")
+                    in_obj=true
+                    ;;
+                *'"target":'*)
+                    cur_target="${line#*: \"}"
+                    cur_target="${cur_target%,}"
+                    cur_target="${cur_target%\"}"
+                    cur_target=$(json_unescape "$cur_target")
+                    ;;
+                *'}'*)
+                    if [[ "$in_obj" == true && -n "$cur_name" ]]; then
+                        snap_names+=("$cur_name")
+                        snap_targets+=("$cur_target")
+                    fi
+                    cur_name=""
+                    cur_target=""
+                    in_obj=false
+                    ;;
+            esac
+        done < "$file"
+    fi
 
     if [[ ${#snap_names[@]} -eq 0 ]]; then
         error_exit "Snapshot '$file' contained no links." 4

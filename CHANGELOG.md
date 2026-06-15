@@ -5,6 +5,21 @@ All notable changes to sym will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-06-15
+
+### Changed
+- `sym snapshot restore` now parses snapshots with `jq` when it is available,
+  reading name/target pairs NUL-delimited so any value survives intact. When
+  `jq` is absent it falls back to a hardened text scan that uses parameter
+  expansion (no per-line `sed` subprocess) to strip the surrounding quotes.
+
+### Fixed
+- The snapshot `json_unescape` helper now decodes a literal backslash followed
+  by `n` (or `r`/`t`) correctly. The previous single-pass version (1.0.6) could
+  misread the encoded `\\n` as a newline; it now parks escaped backslashes on a
+  sentinel byte before decoding the rest. Thanks to @kzenmatthias for the fix in
+  [#2](https://github.com/11ways/sym/pull/2).
+
 ## [1.0.6] - 2026-06-15
 
 ### Fixed

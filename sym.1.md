@@ -2,7 +2,7 @@
 title: SYM
 section: 1
 header: User Manual
-footer: sym 1.0.6
+footer: sym 1.0.7
 date: June 2026
 ---
 
