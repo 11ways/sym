@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # sym - Symbolic Link Manager
-# Version: 1.0.5
+# Version: 1.0.6
 # Author: Roel Van Gils
 # License: MIT
 # Description: A simple, user-friendly tool for managing symbolic links in ~/.local/bin
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # === METADATA ===
-readonly VERSION="1.0.5"
+readonly VERSION="1.0.6"
 readonly SCRIPT_NAME="sym"
 
 # === CONFIGURATION ===
@@ -204,6 +204,19 @@ json_escape() {
     s="${s//$'\n'/\\n}"
     s="${s//$'\r'/\\r}"
     s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+# Reverses json_escape(). Decode order matters: resolve the multi-char
+# escapes first and decode the backslash last, so a literal "\\n" in the
+# original (stored as "\\\\n") is not mistaken for a newline escape.
+json_unescape() {
+    local s="$1"
+    s="${s//\\n/$'\n'}"
+    s="${s//\\r/$'\r'}"
+    s="${s//\\t/$'\t'}"
+    s="${s//\\\"/\"}"
+    s="${s//\\\\/\\}"
     printf '%s' "$s"
 }
 
@@ -1605,12 +1618,14 @@ snapshot_restore() {
                 cur_name=$(printf '%s' "$line" | sed -E 's/.*"name": "(.*)".*/\1/')
                 cur_name="${cur_name%,}"
                 cur_name="${cur_name%\"}"
+                cur_name=$(json_unescape "$cur_name")
                 in_obj=true
                 ;;
             *'"target":'*)
                 cur_target=$(printf '%s' "$line" | sed -E 's/.*"target": "(.*)".*/\1/')
                 cur_target="${cur_target%,}"
                 cur_target="${cur_target%\"}"
+                cur_target=$(json_unescape "$cur_target")
                 ;;
             *'}'*)
                 if [[ "$in_obj" == true && -n "$cur_name" ]]; then

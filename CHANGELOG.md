@@ -5,6 +5,15 @@ All notable changes to sym will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-06-15
+
+### Fixed
+- `sym snapshot restore` now JSON-unescapes link names and targets, mirroring
+  the escaping applied by `sym snapshot save`. Previously, any link whose name
+  or target contained `"`, `\`, a newline, tab, or CR was restored to the wrong
+  path, silently producing a broken link. Thanks to @kzenmatthias for the
+  detailed report (#1).
+
 ## [1.0.5] - 2026-06-15
 
 ### Added
