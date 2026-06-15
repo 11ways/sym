@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/sym-banner.png" width="640"
+  <img src="docs/sym-banner.png" width="400"
        alt="sym — a Symbolic Link Manager. Two document icons labelled A and B joined by a chain-link symbol on a dark blue background.">
 </p>
 
